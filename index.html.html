@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>饼饼之家 · 房源对比</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,"PingFang SC","Hiragino Sans GB",sans-serif;background:#f5f5f5;color:#333;}
+.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:16px;text-align:center;}
+.header h1{font-size:18px;font-weight:600;}
+.header p{font-size:12px;opacity:.8;margin-top:4px;}
+.container{padding:12px;max-width:100%;}
+.card{background:white;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.card-title{font-size:16px;font-weight:600;margin-bottom:12px;color:#333;}
+.btn{background:#667eea;color:white;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px;margin-top:8px;}
+.btn-secondary{background:#f0f0f0;color:#333;}
+.btn-green{background:#27ae60;}
+.form-group{margin-bottom:12px;}
+.form-group label{display:block;font-size:12px;color:#888;margin-bottom:4px;}
+.form-group input,.form-group select{width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;}
+.house-item{background:#fafafa;border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #667eea;cursor:pointer;}
+.house-item:active{background:#f0f0f0;}
+.house-name{font-size:15px;font-weight:600;}
+.house-info{font-size:12px;color:#666;line-height:1.8;margin-top:6px;}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;margin-right:4px;}
+.tag-red{background:#ffebee;color:#d32f2f;}
+.tag-blue{background:#e3f2fd;color:#1976d2;}
+.tag-orange{background:#fff3e0;color:#f57c00;}
+.tag-green{background:#e8f5e9;color:#388e3c;}
+.result-box{background:#f8f9fa;border-radius:8px;padding:12px;margin-top:12px;}
+.result-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:13px;}
+.result-row:last-child{border-bottom:none;}
+.empty{text-align:center;padding:40px;color:#999;}
+.modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center;}
+.modal.active{display:flex;}
+.modal-content{background:white;width:100%;max-height:85vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:20px;animation:slideUp .3s;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.close-btn{font-size:24px;color:#999;background:none;border:none;}
+.add-btn{position:fixed;bottom:20px;right:20px;width:56px;height:56px;background:#667eea;color:white;border:none;border-radius:50%;font-size:28px;box-shadow:0 4px 12px rgba(102,126,234,.4);z-index:100;display:flex;align-items:center;justify-content:center;}
+.sort-bar{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;}
+.sort-btn{padding:6px 12px;border:1px solid #e0e0e0;border-radius:16px;font-size:12px;background:white;white-space:nowrap;}
+.sort-btn.active{background:#667eea;color:white;border-color:#667eea;}
+.card-grid{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;}
+.card-item{background:white;border-radius:12px;padding:14px;min-width:190px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-top:4px solid #667eea;}
+.data-btns{display:flex;gap:8px;margin-bottom:12px;}
+.data-btns .btn{flex:1;margin:0;padding:8px;font-size:12px;}
+.import-input{display:none;}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>饼饼之家 · 房源对比</h1>
+  <p>宁波购房全流程对比工具</p>
+</div>
+
+<div class="nav" style="display:flex;background:white;padding:8px;gap:4px;position:sticky;top:0;z-index:99;overflow-x:auto;border-bottom:1px solid #eee;">
+  <button class="sort-btn active" onclick="showTab('list')" id="btn-list">列表</button>
+  <button class="sort-btn" onclick="showTab('cards')" id="btn-cards">卡片</button>
+  <button class="sort-btn" onclick="showTab('detail')" id="btn-detail">详情</button>
+  <button class="sort-btn" onclick="showTab('calc')" id="btn-calc">测算</button>
+</div>
+
+<div class="container">
+
+<!-- 列表页 -->
+<div id="tab-list" style="display:block;">
+  <div class="card">
+    <div class="card-title">房源列表 <span id="count" style="color:#667eea;">0套</span></div>
+    <div class="data-btns">
+      <button class="btn btn-secondary" onclick="exportData()">导出备份</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">导入恢复</button>
+      <input type="file" id="importFile" class="import-input" accept=".json" onchange="importData(this)">
+    </div>
+    <div class="sort-bar">
+      <button class="sort-btn active" onclick="sortBy('default')">默认</button>
+      <button class="sort-btn" onclick="sortBy('price')">总价低→高</button>
+      <button class="sort-btn" onclick="sortBy('unit')">单价低→高</button>
+      <button class="sort-btn" onclick="sortBy('monthly')">月供低→高</button>
+    </div>
+    <div id="houseList"><div class="empty">还没有房源<br>点击右下角 + 添加</div></div>
+  </div>
+</div>
+
+<!-- 卡片页 -->
+<div id="tab-cards" style="display:none;">
+  <div class="card">
+    <div class="card-title">卡片对比</div>
+    <div id="cardGrid" class="card-grid"></div>
+  </div>
+</div>
+
+<!-- 详情页 -->
+<div id="tab-detail" style="display:none;">
+  <div class="card">
+    <div class="card-title">房源详情</div>
+    <div class="form-group">
+      <label>选择房源</label>
+      <select id="detailSelect" onchange="showDetail()"><option value="">请选择</option></select>
+    </div>
+    <div id="detailBox"></div>
+  </div>
+</div>
+
+<!-- 测算页 -->
+<div id="tab-calc" style="display:none;">
+  <div class="card">
+    <div class="card-title">财务测算</div>
+    <div class="form-group"><label>总价（万）</label><input type="number" id="cPrice" value="650"></div>
+    <div class="form-group"><label>面积（㎡）</label><input type="number" id="cArea" value="431"></div>
+    <div class="form-group"><label>首付比例（%）</label><input type="number" id="cDown" value="30"></div>
+    <div class="form-group"><label>产权类型</label>
+      <select id="cType"><option value="comm">40年商业（契税3%）</option><option value="res">70年住宅（契税1.5%）</option></select>
+    </div>
+    <div class="form-group"><label>贷款利率（%）</label><input type="number" id="cRate" value="4.5" step="0.1"></div>
+    <div class="form-group"><label>贷款年限</label><input type="number" id="cYears" value="10"></div>
+    <div class="form-group"><label>装修预算（万）</label><input type="number" id="cReno" value="100"></div>
+    <button class="btn" onclick="doCalc()">计算</button>
+    <div id="calcResult" class="result-box" style="display:none;"></div>
+  </div>
+</div>
+
+</div>
+
+<button class="add-btn" onclick="openModal()">+</button>
+
+<!-- 添加/编辑弹窗 -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div id="modalTitle" style="font-size:18px;font-weight:600;">添加房源</div>
+      <button class="close-btn" onclick="closeModal()">&times;</button>
+    </div>
+    <form onsubmit="saveHouse(event)">
+      <input type="hidden" id="editId">
+      <div class="form-group"><label>楼盘名称 *</label><input type="text" id="fName" required></div>
+      <div class="form-group"><label>房间号</label><input type="text" id="fRoom" placeholder="例如：12-3"></div>
+      <div class="form-group"><label>地址/区域</label><input type="text" id="fAddr"></div>
+      <div class="form-group"><label>产权类型</label>
+        <select id="fType"><option value="40年商业">40年商业</option><option value="70年住宅">70年住宅</option></select>
+      </div>
+      <div class="form-group"><label>建筑面积（㎡）*</label><input type="number" id="fArea" required oninput="calcUnitPrice()"></div>
+      <div class="form-group"><label>总价（万）*</label><input type="number" id="fPrice" required oninput="calcUnitPrice()"></div>
+      <div class="form-group"><label>单价（元/㎡）</label><input type="text" id="fUnit" readonly style="background:#e8f5e9;color:#27ae60;font-weight:600;"></div>
+      <div class="form-group"><label>层高（m）</label><input type="number" id="fHeight" value="4.79" step="0.01"></div>
+      <div class="form-group"><label>首付比例（%）</label><input type="number" id="fDown" value="30"></div>
+      <div class="form-group"><label>贷款利率（%）</label><input type="number" id="fRate" value="4.5" step="0.1"></div>
+      <div class="form-group"><label>贷款年限</label><input type="number" id="fYears" value="10"></div>
+      <div class="form-group"><label>装修预算（万）</label><input type="number" id="fReno" value="0"></div>
+      <div class="form-group"><label>距公司（km）</label><input type="number" id="fDist"></div>
+      <div class="form-group"><label>距贝塔宠物医院（km）</label><input type="number" id="fBeta"></div>
+      <div class="form-group"><label>通勤时间（分钟）</label><input type="number" id="fCommute"></div>
+      <div class="form-group"><label>交付状态</label>
+        <select id="fDelivery"><option value="现房">现房</option><option value="期房">期房</option></select>
+      </div>
+      <div class="form-group"><label>装修状态</label>
+        <select id="fStatus"><option value="毛坯">毛坯</option><option value="精装">精装</option></select>
+      </div>
+      <div class="form-group"><label>商圈配套</label><input type="text" id="fMall"></div>
+      <div class="form-group"><label>备注</label><input type="text" id="fNote"></div>
+      <button type="submit" class="btn" style="width:100%;">保存房源</button>
+      <button type="button" class="btn btn-secondary" style="width:100%;margin-top:6px;" onclick="closeModal()">取消</button>
+    </form>
+  </div>
+</div>
+
+<script>
+let houses = JSON.parse(localStorage.getItem('bh_houses') || '[]');
+let currentSort = 'default';
+let currentTab = 'list';
+
+function saveStorage() {
+  localStorage.setItem('bh_houses', JSON.stringify(houses));
+}
+
+function showTab(tab) {
+  currentTab = tab;
+  ['list','cards','detail','calc'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = (t === tab) ? 'block' : 'none';
+    document.getElementById('btn-'+t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'cards') renderCards();
+  if (tab === 'detail') updateDetailSelect();
+}
+
+function calcFinancial(h) {
+  const price = h.price * 10000;
+  const down = price * (h.downPct / 100);
+  const loan = price - down;
+  const taxRate = h.type === '70年住宅' ? 0.015 : 0.03;
+  const tax = h.price * taxRate;
+  const repair = h.area * 100 / 10000;
+  const fees = 1;
+  const r = (h.rate / 100) / 12;
+  const n = h.years * 12;
+  const pmt = r === 0 ? loan / n : loan * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+  const yearly = pmt * 12;
+  const totalCash = (down / 10000) + tax + repair + fees;
+  return { down: down/10000, loan: loan/10000, tax, repair, fees, pmt: Math.round(pmt), yearly: yearly/10000, totalCash, unitPrice: Math.round(price/h.area) };
+}
+
+function renderList() {
+  const list = document.getElementById('houseList');
+  document.getElementById('count').textContent = houses.length + '套';
+  if (houses.length === 0) { list.innerHTML = '<div class="empty">还没有房源<br>点击右下角 + 添加</div>'; return; }
+  let sorted = [...houses];
+  if (currentSort === 'price') sorted.sort((a,b) => a.price - b.price);
+  if (currentSort === 'unit') sorted.sort((a,b) => calcFinancial(a).unitPrice - calcFinancial(b).unitPrice);
+  if (currentSort === 'monthly') sorted.sort((a,b) => calcFinancial(a).pmt - calcFinancial(b).pmt);
+  list.innerHTML = sorted.map(h => {
+    const f = calcFinancial(h);
+    return `<div class="house-item" onclick="editHouse(${h.id})">
+      <div class="house-name">${h.name} ${h.roomNo ? '('+h.roomNo+')' : ''}</div>
+      <div class="house-info">
+        <span class="tag tag-red">${h.price}万</span>
+        <span class="tag tag-blue">${h.area}㎡</span>
+        <span class="tag tag-orange">单价${f.unitPrice.toLocaleString()}元/㎡</span>
+        <span class="tag tag-green">月供${(f.pmt/10000).toFixed(2)}万</span>
+        <br>${h.type} · ${h.delivery} · ${h.status}
+        ${h.dist ? '· 距公司'+h.dist+'km' : ''}
+        ${h.beta ? '· 距贝塔'+h.beta+'km' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderCards() {
+  const grid = document.getElementById('cardGrid');
+  if (houses.length === 0) { grid.innerHTML = '<div class="empty">还没有房源</div>'; return; }
+  let sorted = [...houses];
+  if (currentSort === 'price') sorted.sort((a,b) => a.price - b.price);
+  if (currentSort === 'unit') sorted.sort((a,b) => calcFinancial(a).unitPrice - calcFinancial(b).unitPrice);
+  if (currentSort === 'monthly') sorted.sort((a,b) => calcFinancial(a).pmt - calcFinancial(b).pmt);
+  grid.innerHTML = sorted.map(h => {
+    const f = calcFinancial(h);
+    return `<div class="card-item">
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px;">${h.name}</div>
+      <div style="font-size:12px;color:#666;line-height:1.8;">
+        <div><span style="color:#999;">总价</span> <b style="color:#e74c3c;">${h.price}万</b></div>
+        <div><span style="color:#999;">面积</span> ${h.area}㎡</div>
+        <div><span style="color:#999;">单价</span> <b style="color:#667eea;">${f.unitPrice.toLocaleString()}元/㎡</b></div>
+        <div><span style="color:#999;">首付</span> ${f.down.toFixed(1)}万</div>
+        <div><span style="color:#999;">月供</span> <b style="color:#e74c3c;">${(f.pmt/10000).toFixed(2)}万</b></div>
+        <div><span style="color:#999;">贷款</span> ${f.loan.toFixed(0)}万/${h.years}年</div>
+        <div><span style="color:#999;">税费</span> ${(f.tax+f.repair+f.fees).toFixed(1)}万</div>
+        <div><span style="color:#999;">现金总需求</span> <b style="color:#27ae60;">${f.totalCash.toFixed(1)}万</b></div>
+        <div><span style="color:#999;">层高</span> ${h.height || '-'}m</div>
+        <div><span style="color:#999;">距公司</span> ${h.dist || '-'}km</div>
+        <div><span style="color:#999;">距贝塔宠物医院</span> ${h.beta || '-'}km</div>
+        <div><span style="color:#999;">产权</span> ${h.type}</div>
+        <div><span style="color:#999;">交付</span> ${h.delivery}/${h.status}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateDetailSelect() {
+  const sel = document.getElementById('detailSelect');
+  sel.innerHTML = '<option value="">请选择房源</option>' + houses.map(h => `<option value="${h.id}">${h.name} - ${h.price}万</option>`).join('');
+}
+
+function showDetail() {
+  const id = parseInt(document.getElementById('detailSelect').value);
+  const h = houses.find(x => x.id === id);
+  if (!h) { document.getElementById('detailBox').innerHTML = ''; return; }
+  const f = calcFinancial(h);
+  document.getElementById('detailBox').innerHTML = `
+    <div class="result-box">
+      <div class="result-row"><span>楼盘</span><b>${h.name}</b></div>
+      <div class="result-row"><span>房间号</span><b>${h.roomNo || '-'}</b></div>
+      <div class="result-row"><span>地址</span><b>${h.addr || '-'}</b></div>
+      <div class="result-row"><span>产权</span><b>${h.type}</b></div>
+      <div class="result-row"><span>面积</span><b>${h.area}㎡</b></div>
+      <div class="result-row"><span>单价</span><b>${f.unitPrice.toLocaleString()}元/㎡</b></div>
+      <div class="result-row"><span>总价</span><b style="color:#e74c3c;">${h.price}万</b></div>
+      <div class="result-row"><span>首付${h.downPct}%</span><b>${f.down.toFixed(1)}万</b></div>
+      <div class="result-row"><span>贷款</span><b>${f.loan.toFixed(0)}万</b></div>
+      <div class="result-row"><span>月供</span><b style="color:#e74c3c;">${f.pmt.toLocaleString()}元/月</b></div>
+      <div class="result-row"><span>一年月供</span><b>${f.yearly.toFixed(1)}万</b></div>
+      <div class="result-row"><span>契税</span><b>${f.tax.toFixed(1)}万</b></div>
+      <div class="result-row"><span>维修基金</span><b>${f.repair.toFixed(1)}万</b></div>
+      <div class="result-row"><span>过户现金总需求</span><b style="color:#27ae60;">${f.totalCash.toFixed(1)}万</b></div>
+      <div class="result-row"><span>层高</span><b>${h.height || '-'}m</b></div>
+      <div class="result-row"><span>距公司</span><b>${h.dist || '-'}km</b></div>
+      <div class="result-row"><span>距贝塔宠物医院</span><b>${h.beta || '-'}km</b></div>
+      <div class="result-row"><span>交付</span><b>${h.delivery}/${h.status}</b></div>
+      <div class="result-row"><span>商圈</span><b>${h.mall || '-'}</b></div>
+      <div class="result-row"><span>备注</span><b>${h.note || '-'}</b></div>
+    </div>
+    <button class="btn" style="background:#ffebee;color:#d32f2f;margin-top:12px;" onclick="deleteHouse(${h.id})">删除此房源</button>
+  `;
+}
+
+function sortBy(type) {
+  currentSort = type;
+  document.querySelectorAll('.sort-btn').forEach((b,i) => b.classList.toggle('active', i === ['default','price','unit','monthly'].indexOf(type) + 1));
+  renderList();
+  if (currentTab === 'cards') renderCards();
+}
+
+function openModal(id) {
+  document.getElementById('modal').classList.add('active');
+  document.getElementById('modalTitle').textContent = id ? '编辑房源' : '添加房源';
+  document.getElementById('editId').value = id || '';
+  if (!id) {
+    document.querySelector('form').reset();
+    document.getElementById('fUnit').value = '';
+  }
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+}
+
+function calcUnitPrice() {
+  const area = parseFloat(document.getElementById('fArea').value) || 0;
+  const price = parseFloat(document.getElementById('fPrice').value) || 0;
+  if (area > 0 && price > 0) {
+    document.getElementById('fUnit').value = Math.round(price * 10000 / area).toLocaleString() + ' 元/㎡';
+  } else {
+    document.getElementById('fUnit').value = '';
+  }
+}
+
+function saveHouse(e) {
+  e.preventDefault();
+  const id = document.getElementById('editId').value;
+  const h = {
+    id: id ? parseInt(id) : Date.now(),
+    name: document.getElementById('fName').value,
+    roomNo: document.getElementById('fRoom').value,
+    addr: document.getElementById('fAddr').value,
+    type: document.getElementById('fType').value,
+    area: parseFloat(document.getElementById('fArea').value) || 0,
+    price: parseFloat(document.getElementById('fPrice').value) || 0,
+    height: parseFloat(document.getElementById('fHeight').value) || 0,
+    downPct: parseFloat(document.getElementById('fDown').value) || 0,
+    rate: parseFloat(document.getElementById('fRate').value) || 0,
+    years: parseInt(document.getElementById('fYears').value) || 0,
+    reno: parseFloat(document.getElementById('fReno').value) || 0,
+    dist: document.getElementById('fDist').value,
+    beta: document.getElementById('fBeta').value,
+    commute: document.getElementById('fCommute').value,
+    delivery: document.getElementById('fDelivery').value,
+    status: document.getElementById('fStatus').value,
+    mall: document.getElementById('fMall').value,
+    note: document.getElementById('fNote').value
+  };
+  if (id) {
+    const idx = houses.findIndex(x => x.id === parseInt(id));
+    if (idx >= 0) houses[idx] = h;
+  } else {
+    houses.push(h);
+  }
+  saveStorage();
+  closeModal();
+  renderList();
+  updateDetailSelect();
+  alert('保存成功！');
+}
+
+function editHouse(id) {
+  const h = houses.find(x => x.id === id);
+  if (!h) return;
+  openModal(id);
+  document.getElementById('fName').value = h.name;
+  document.getElementById('fRoom').value = h.roomNo || '';
+  document.getElementById('fAddr').value = h.addr || '';
+  document.getElementById('fType').value = h.type;
+  document.getElementById('fArea').value = h.area;
+  document.getElementById('fPrice').value = h.price;
+  calcUnitPrice();
+  document.getElementById('fHeight').value = h.height || '';
+  document.getElementById('fDown').value = h.downPct || 30;
+  document.getElementById('fRate').value = h.rate || 4.5;
+  document.getElementById('fYears').value = h.years || 10;
+  document.getElementById('fReno').value = h.reno || 0;
+  document.getElementById('fDist').value = h.dist || '';
+  document.getElementById('fBeta').value = h.beta || '';
+  document.getElementById('fCommute').value = h.commute || '';
+  document.getElementById('fDelivery').value = h.delivery;
+  document.getElementById('fStatus').value = h.status;
+  document.getElementById('fMall').value = h.mall || '';
+  document.getElementById('fNote').value = h.note || '';
+}
+
+function deleteHouse(id) {
+  if (!confirm('确定删除？')) return;
+  houses = houses.filter(h => h.id !== id);
+  saveStorage();
+  renderList();
+  updateDetailSelect();
+  showTab('list');
+}
+
+function exportData() {
+  if (houses.length === 0) { alert('没有数据可导出'); return; }
+  const data = { houses: houses, exportTime: new Date().toLocaleString('zh-CN'), version: '1.0' };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '饼饼之家房源数据_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  alert('导出成功！JSON文件已保存到下载文件夹。');
+}
+
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.houses && Array.isArray(data.houses)) {
+        houses = data.houses;
+        saveStorage();
+        renderList();
+        updateDetailSelect();
+        alert('导入成功！共恢复 ' + houses.length + ' 套房源');
+      } else {
+        alert('文件格式不对');
+      }
+    } catch(err) {
+      alert('导入失败：' + err.message);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function doCalc() {
+  const price = parseFloat(document.getElementById('cPrice').value) || 0;
+  const area = parseFloat(document.getElementById('cArea').value) || 0;
+  const downPct = parseFloat(document.getElementById('cDown').value) || 0;
+  const type = document.getElementById('cType').value;
+  const rate = parseFloat(document.getElementById('cRate').value) || 0;
+  const years = parseInt(document.getElementById('cYears').value) || 0;
+  const reno = parseFloat(document.getElementById('cReno').value) || 0;
+  const priceYuan = price * 10000;
+  const down = priceYuan * (downPct / 100);
+  const loan = priceYuan - down;
+  const taxRate = type === 'res' ? 0.015 : 0.03;
+  const tax = price * taxRate;
+  const repair = area * 100 / 10000;
+  const fees = 1;
+  const r = (rate / 100) / 12;
+  const n = years * 12;
+  const pmt = r === 0 ? loan / n : loan * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+  const yearly = pmt * 12;
+  const totalCash = (down / 10000) + tax + repair + fees;
+  document.getElementById('calcResult').style.display = 'block';
+  document.getElementById('calcResult').innerHTML = `
+    <div class="result-row"><span>首付${downPct}%</span><b>${(down/10000).toFixed(1)}万</b></div>
+    <div class="result-row"><span>贷款</span><b>${(loan/10000).toFixed(0)}万</b></div>
+    <div class="result-row"><span>契税</span><b>${tax.toFixed(1)}万</b></div>
+    <div class="result-row"><span>月供</span><b style="color:#e74c3c;">${Math.round(pmt).toLocaleString()}元/月</b></div>
+    <div class="result-row"><span>一年月供</span><b>${(yearly/10000).toFixed(1)}万</b></div>
+    <div class="result-row"><span>过户现金总需求</span><b style="color:#27ae60;">${totalCash.toFixed(1)}万</b></div>
+    <div class="result-row"><span>含${reno}万装修</span><b style="color:#27ae60;">${(totalCash+yearly/10000+reno).toFixed(1)}万</b></div>
+  `;
+}
+
+// Init
+if (houses.length === 0) {
+  houses.push({
+    id: Date.now(), name: '姚江印（示例）', roomNo: '12-3', addr: '江北区姚江新城',
+    type: '40年商业', area: 431.16, price: 650, height: 4.79,
+    downPct: 30, rate: 4.5, years: 10, reno: 100,
+    dist: '', beta: '', commute: '', delivery: '现房', status: '毛坯',
+    mall: '', note: '实际成交650万，网签370万+280万'
+  });
+  saveStorage();
+}
+renderList();
+updateDetailSelect();
+</script>
+</body>
+</html>
